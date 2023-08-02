@@ -72,6 +72,7 @@ class YRoomChannelConsumer(AsyncConsumer):
         result = self.room_manager.handle_message(
             room_name, conn_id, message["payload"]
         )
+        await self.snapshot_room(room_name)
         await self.respond(result, room_name=room_name, channel_name=channel_name)
 
     @asynccontextmanager

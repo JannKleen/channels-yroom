@@ -2,6 +2,7 @@ import logging
 import random
 from typing import Optional
 
+import sentry_sdk
 from channels.generic.websocket import AsyncWebsocketConsumer
 
 from .conf import get_room_settings
@@ -79,7 +80,10 @@ class YroomConsumer(AsyncWebsocketConsumer):
     ) -> None:
         # Receive message from WebSocket
         if bytes_data:
-            await self.handle_room_message(bytes_data)
+            with sentry_sdk.start_transaction(
+                op="yroom_message", name="handle_room_message"
+            ) as span:
+                await self.handle_room_message(bytes_data)
 
     async def handle_room_message(self, bytes_data: bytes) -> None:
         await self.channel_layer.send(
