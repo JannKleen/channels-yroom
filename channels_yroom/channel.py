@@ -1,5 +1,6 @@
 import asyncio
 import logging
+import threading
 from contextlib import asynccontextmanager
 from typing import Optional
 
@@ -17,6 +18,7 @@ class YRoomChannelConsumer(AsyncConsumer):
     def __init__(self) -> None:
         self.room_manager: YRoomManager = YRoomManager(get_settings())
         self.cleanup_tasks = {}
+        self._debounce_timer = None
         self.storages: dict[str, YDocStorage] = {}
 
     def get_storage(self, room_name):
@@ -72,8 +74,20 @@ class YRoomChannelConsumer(AsyncConsumer):
         result = self.room_manager.handle_message(
             room_name, conn_id, message["payload"]
         )
-        await self.snapshot_room(room_name)
+        await self.debounced_snapshot_room(room_name)
         await self.respond(result, room_name=room_name, channel_name=channel_name)
+
+    async def debounced_snapshot_room(self, room_name: str) -> None:
+        async def task(self, room_name) -> None:
+            logger.info("Debounced snapshot room %s", room_name)
+            await asyncio.sleep(5)
+            await self.snapshot_room(room_name)
+
+        if self._debounce_timer and not self._debounce_timer.done():
+            # There is already a timer running, no need to start another one.
+            return
+
+        self._debounce_timer = asyncio.ensure_future(task(self, room_name))
 
     @asynccontextmanager
     async def try_room(self, room_name: str) -> None:
