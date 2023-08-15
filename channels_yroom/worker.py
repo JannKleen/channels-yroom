@@ -2,8 +2,6 @@ import asyncio
 import logging
 import signal
 
-import sentry_sdk
-
 from .channel import YRoomChannelConsumer
 
 logger = logging.getLogger(__name__)
@@ -77,12 +75,9 @@ class YroomWorker:
             if self.shutting_down:
                 # Stop
                 break
-            with sentry_sdk.start_transaction(
-                op="yroom_consumer", name="consumer_loop"
-            ) as span:
-                message = await self.input_queue.get()
-                # Dispatch directly to the consumer
-                await self.consumer.dispatch(message)
+            message = await self.input_queue.get()
+            # Dispatch directly to the consumer
+            await self.consumer.dispatch(message)
 
     def handle_exception(self, loop, context):
         msg = context.get("exception", context["message"])
