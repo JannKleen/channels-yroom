@@ -37,18 +37,21 @@ class YRoomChannelConsumer(AsyncConsumer):
         # Cancel room cleanup task if it exists
         if room_name in self.cleanup_tasks:
             self.cleanup_tasks[room_name].cancel()
-
-        result = None
-        if not self.room_manager.has_room(room_name):
-            result = await self.create_room_from_snapshot(room_name, conn_id)
-        if result is None:
-            logger.debug(
-                "yroom connect, room present or no snapshot %s %s", room_name, conn_id
+        try:
+            result = None
+            if not self.room_manager.has_room(room_name):
+                result = await self.create_room_from_snapshot(room_name, conn_id)
+            if result is None:
+                logger.debug(
+                    "yroom connect, room present or no snapshot %s %s", room_name, conn_id
+                )
+                result = self.room_manager.connect(room_name, conn_id)
+            await self.respond(
+                result, room_name=room_name, channel_name=message["channel_name"]
             )
-            result = self.room_manager.connect(room_name, conn_id)
-        await self.respond(
-            result, room_name=room_name, channel_name=message["channel_name"]
-        )
+        except Exception as exc:
+            logger.exception("Error in room %s", room_name)
+            await self.disconnect_client(room_name, conn_id, send_response=False)
 
     async def create_room_from_snapshot(
         self, room_name: str, conn_id: int = 0
