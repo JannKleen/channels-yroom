@@ -98,6 +98,8 @@ class YRoomChannelConsumer(AsyncConsumer):
                 result = await self.create_room_from_snapshot(room_name)
                 has_snapshot = result is not None
             yield has_room or has_snapshot
+        except Exception:
+            logger.exception("Error in room %s", room_name)
         finally:
             if not has_room:
                 # if room was not present before, disconnect client, remove room
