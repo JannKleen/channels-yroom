@@ -79,8 +79,8 @@ class YroomWorker:
                 message = await self.input_queue.get()
                 # Dispatch directly to the consumer
                 await self.consumer.dispatch(message)
-            except Exception as exc:
-                logger.error(f"Exception in worker loop: {exc}", exc_info=True)
+            except BaseException:
+                logger.exception(f"Exception in worker loop")
 
     def handle_exception(self, loop, context):
         msg = context.get("exception", context["message"])

@@ -49,7 +49,7 @@ class YRoomChannelConsumer(AsyncConsumer):
             await self.respond(
                 result, room_name=room_name, channel_name=message["channel_name"]
             )
-        except Exception as exc:
+        except BaseException:
             logger.exception("Error in room %s", room_name)
             await self.disconnect_client(room_name, conn_id, send_response=False)
 
@@ -101,7 +101,7 @@ class YRoomChannelConsumer(AsyncConsumer):
                 result = await self.create_room_from_snapshot(room_name)
                 has_snapshot = result is not None
             yield has_room or has_snapshot
-        except Exception:
+        except BaseException:
             logger.exception("Error in room %s", room_name)
         finally:
             if not has_room:
