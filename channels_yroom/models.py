@@ -2,14 +2,15 @@ from django.db import models
 
 
 class YDocUpdateManager(models.Manager):
-    def get_snapshot(self, name):
+    async def get_snapshot(self, name):
         try:
-            return self.get(name=name).data
+            doc = await self.aget(name=name)
+            return doc.data
         except YDocUpdate.DoesNotExist:
             return None
 
-    def save_snapshot(self, name, data):
-        return self.update_or_create(name=name, defaults={"data": data})
+    async def save_snapshot(self, name, data):
+        return await self.aupdate_or_create(name=name, defaults={"data": data})
 
 
 class YDocUpdate(models.Model):
