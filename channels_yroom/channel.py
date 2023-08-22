@@ -79,8 +79,8 @@ class YRoomChannelConsumer(AsyncConsumer):
 
     async def debounced_snapshot_room(self, room_name: str) -> None:
         async def task(self, room_name) -> None:
-            logger.info("Debounced snapshot room %s", room_name)
             await asyncio.sleep(5)
+            logger.info("Debounced snapshot room %s", room_name)
             await self.snapshot_room(room_name)
 
         if self._debounce_timer and not self._debounce_timer.done():
