@@ -18,7 +18,7 @@ class YRoomChannelConsumer(AsyncConsumer):
     def __init__(self) -> None:
         self.room_manager: YRoomManager = YRoomManager(get_settings())
         self.cleanup_tasks = {}
-        self._debounce_timer = None
+        self._debounce_timer = {}
         self.storages: dict[str, YDocStorage] = {}
 
     def get_storage(self, room_name):
@@ -83,11 +83,14 @@ class YRoomChannelConsumer(AsyncConsumer):
             logger.info("Debounced snapshot room %s", room_name)
             await self.snapshot_room(room_name)
 
-        if self._debounce_timer and not self._debounce_timer.done():
+        if (timer := self._debounce_timer.get(room_name)) and not timer.done():
             # There is already a timer running, no need to start another one.
             return
 
-        self._debounce_timer = asyncio.ensure_future(task(self, room_name))
+        self._debounce_timer[room_name] = asyncio.ensure_future(task(self, room_name))
+        self._debounce_timer[room_name].add_done_callback(
+            lambda _task: self._debounce_timer.pop(room_name, None)
+        )
 
     @asynccontextmanager
     async def try_room(self, room_name: str) -> None:
